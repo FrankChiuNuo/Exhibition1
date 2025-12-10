@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>第一展區：盲測審判 (5 Cases)</title>
+    <style>
+        :root {
+            --bg-color: #0d0d0d;
+            --card-bg: #1a1a1a;
+            --text-main: #e0e0e0;
+            --highlight: #00ff41; /* 駭客綠：用於正面/中性真相 */
+            --alert: #ff3333; /* 警告紅：用於負面真相 */
+            --mute: #666;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'Courier New', Courier, monospace;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        /* 掃描線特效背景 */
+        body::before {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 2;
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 600px;
+            z-index: 10;
+        }
+
+        /* 進度條 */
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: #333;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        .progress-fill {
+            height: 100%;
+            background: var(--highlight);
+            width: 20%; /* 初始寬度 1/5 */
+            transition: width 0.5s ease;
+            box-shadow: 0 0 10px var(--highlight);
+        }
+
+        /* 檔案卡片 */
+        .case-card {
+            background: var(--card-bg);
+            border: 1px solid #333;
+            padding: 40px;
+            border-radius: 4px;
+            box-shadow: 0 0 30px rgba(0,0,0,0.8);
+            position: relative;
+            min-height: 420px;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .case-header {
+            border-bottom: 1px solid #333;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            color: var(--mute);
+            font-size: 0.8rem;
+        }
+
+        .behavior-text {
+            font-size: 1.4rem;
+            line-height: 1.6;
+            margin-bottom: 30px;
+            font-weight: bold;
+            min-height: 100px; /* 保持高度一致 */
+        }
+
+        /* 標籤揭露區 */
+        .identity-box {
+            background: #000;
+            padding: 15px;
+            border: 1px dashed #444;
+            margin-bottom: 30px;
+            text-align: center;
+            position: relative;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .hidden-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: #222;
+            color: #555;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: not-allowed;
+            letter-spacing: 2px;
+        }
+
+        .revealed-text {
+            color: var(--highlight);
+            font-size: 1.3rem;
+            font-weight: bold;
+            text-shadow: 0 0 5px var(--highlight);
+            animation: glitch 0.5s infinite;
+            display: none;
+        }
+
+        .revealed-text.bad {
+             color: var(--alert);
+             text-shadow: 0 0 5px var(--alert);
+        }
+
+        /* 按鈕區 */
+        .btn-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        button {
+            background: transparent;
+            border: 1px solid var(--mute);
+            color: var(--text-main);
+            padding: 15px;
+            font-family: inherit;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 1rem;
+        }
+
+        button:hover {
+            border-color: #fff;
+            background: rgba(255,255,255,0.1);
+        }
+
+        button.judge-btn:hover {
+            border-color: var(--alert);
+            color: var(--alert);
+            box-shadow: 0 0 10px rgba(255, 51, 51, 0.3);
+        }
+
+        button.empathy-btn:hover {
+            border-color: var(--highlight);
+            color: var(--highlight);
+            box-shadow: 0 0 10px rgba(0, 255, 65, 0.3);
+        }
+
+        /* 結果反饋區 */
+        .feedback-area {
+            display: none;
+            margin-top: 20px;
+            border-top: 1px solid #333;
+            padding-top: 20px;
+            animation: fadeIn 0.5s;
+        }
+
+        .feedback-text {
+            margin-bottom: 20px;
+            color: #bbb;
+        }
+
+        .next-btn {
+            width: 100%;
+            background: var(--text-main);
+            color: #000;
+            font-weight: bold;
+            border: none;
+        }
+        .next-btn:hover {
+            background: var(--highlight);
+            box-shadow: 0 0 15px var(--highlight);
+        }
+
+        /* 動畫 */
+        @keyframes glitch {
+            0% { opacity: 1; transform: translate(0); }
+            20% { opacity: 0.8; transform: translate(-2px, 2px); }
+            40% { opacity: 1; transform: translate(-2px, -2px); }
+            60% { opacity: 0.9; transform: translate(2px, 2px); }
+            80% { opacity: 1; transform: translate(2px, -2px); }
+            100% { opacity: 1; transform: translate(0); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2 style="text-align: center; letter-spacing: 5px; margin-bottom: 30px;">BLIND_JUDGMENT // 盲測審判</h2>
+        
+        <div class="progress-bar">
+            <div class="progress-fill" id="progress"></div>
+        </div>
+
+        <div class="case-card" id="card-content">
+            </div>
+    </div>
+
+    <script>
+        // 資料庫：5個案例
+        const cases = [
+            {
+                id: "CASE_001",
+                behavior: "「這名男性在捷運車廂內突然大聲尖叫，並伴隨不雅字眼，嚇壞了旁邊的乘客。」",
+                label: "妥瑞氏症患者",
+                context: "他無法控制自己的聲帶抽動。這不是惡意騷擾，而是神經系統的故障。",
+                isBadLabel: false
+            },
+            {
+                id: "CASE_002",
+                behavior: "「這個人整天待在租屋處，沒有去上班，花費大量時間在網路上與人爭論。」",
+                label: "頂大博士生",
+                context: "他正在進行『網路極化』的論文田野調查，但他同時也深受學術焦慮症所苦。",
+                isBadLabel: false
+            },
+            {
+                id: "CASE_003",
+                behavior: "「這位老太太在超商結帳櫃檯前弄了很久，一直按錯手機，後面大排長龍。」",
+                label: "學習中的文盲長者",
+                context: "她不識字，但為了用手機轉帳生活費給孫子，正努力記下店員教她的每一個步驟。",
+                isBadLabel: false
+            },
+            {
+                id: "CASE_004",
+                behavior: "「這位媽媽推著嬰兒車，孩子在車裡大哭，她卻只顧著低頭滑手機，完全不理會。」",
+                label: "產後憂鬱症母親",
+                context: "她不是不理會，而是正在使用APP記錄孩子的癲癇發作頻率，準備傳送給醫生求助。",
+                isBadLabel: false
+            },
+            {
+                id: "CASE_005",
+                behavior: "「這名西裝筆挺的男子在台上侃侃而談，向台下的長輩們介紹高回報的投資項目。」",
+                label: "詐欺通緝犯",
+                context: "外表的光鮮亮麗是他的武器。他利用社會對『菁英形象』的信任，騙取養老金。",
+                isBadLabel: true // 這是負面標籤
+            }
+        ];
+
+        let currentCase = 0;
+
+        function renderCase() {
+            const data = cases[currentCase];
+            const content = document.getElementById('card-content');
+            
+            // 更新進度條
+            document.getElementById('progress').style.width = ((currentCase + 1) / cases.length) * 100 + "%";
+
+            content.innerHTML = `
+                <div>
+                    <div class="case-header">
+                        <span>RECORD ID: ${data.id}</span>
+                        <span>STATUS: PENDING JUDGMENT</span>
+                    </div>
+                    
+                    <div class="behavior-text">
+                        ${data.behavior}
+                    </div>
+
+                    <div class="identity-box">
+                        <div class="hidden-overlay" id="overlay">??? 身份隱藏 ???</div>
+                        <div class="revealed-text ${data.isBadLabel ? 'bad' : ''}" id="reveal-text">${data.label}</div>
+                    </div>
+                </div>
+
+                <div class="btn-group" id="actions">
+                    <button class="judge-btn" onclick="makeJudgment('negative', ${data.isBadLabel})">😡 譴責/反感</button>
+                    <button class="empathy-btn" onclick="makeJudgment('positive', ${data.isBadLabel})">😐 理解/觀察</button>
+                </div>
+
+                <div class="feedback-area" id="feedback">
+                    <p class="feedback-text">
+                        <strong style="color: ${data.isBadLabel ? 'var(--alert)' : 'var(--highlight)'}">真相揭露：</strong><br>
+                        ${data.context}
+                    </p>
+                    <p style="font-size: 0.9em; color: #888;">
+                        <span id="user-choice-text"></span>
+                    </p>
+                    <button class="next-btn" onclick="nextCase()">下一筆資料 >></button>
+                </div>
+            `;
+        }
+
+        function makeJudgment(userChoice, isBadTruth) {
+            // 隱藏遮罩，顯示真實身份
+            document.getElementById('overlay').style.display = 'none';
+            document.getElementById('reveal-text').style.display = 'block';
+            
+            // 鎖定按鈕
+            document.getElementById('actions').style.display = 'none';
+            
+            // 顯示回饋區
+            const feedback = document.getElementById('feedback');
+            feedback.style.display = 'block';
+
+            // 根據使用者的選擇 + 真相的好壞 給予不同回饋
+            const userText = document.getElementById('user-choice-text');
+            
+            if (isBadTruth) {
+                // 這是那個詐欺犯的案例
+                if (userChoice === 'positive') {
+                     userText.innerText = "系統紀錄：您選擇了相信。但有時候，光鮮亮麗的外表是最高明的偽裝。";
+                     userText.style.color = "var(--alert)";
+                } else {
+                     userText.innerText = "系統紀錄：您看穿了表象。在標籤與外表之外，保持懷疑有時是必要的保護。";
+                     userText.style.color = "var(--highlight)";
+                }
+            } else {
+                // 這是其他被誤解的好人案例
+                if (userChoice === 'negative') {
+                    userText.innerText = "系統紀錄：您在第一時間選擇了「反感」。當標籤被撕開，我們是否對他人太過嚴苛？";
+                    userText.style.color = "var(--alert)";
+                } else {
+                    userText.innerText = "系統紀錄：您選擇了保留判斷。在資訊碎片化的網路世界，這是一種稀缺的溫柔。";
+                    userText.style.color = "var(--highlight)";
+                }
+            }
+        }
+
+        function nextCase() {
+            currentCase++;
+            if (currentCase < cases.length) {
+                // 淡出效果
+                const card = document.getElementById('card-content');
+                card.style.opacity = '0';
+                setTimeout(() => {
+                    renderCase();
+                    card.style.opacity = '1';
+                }, 300);
+            } else {
+                showConclusion();
+            }
+        }
+
+        function showConclusion() {
+            const content = document.getElementById('card-content');
+            content.innerHTML = `
+                <div style="text-align: center; padding: 20px; display: flex; flex-direction: column; height: 100%; justify-content: center;">
+                    <h2 style="color: var(--highlight); text-transform: uppercase;">Simulation Complete</h2>
+                    <p style="line-height: 1.8; margin-bottom: 30px; font-size: 1.1rem;">
+                        在剛剛的測試中，<br>
+                        我們經歷了從「誤解好人」到「誤信壞人」的過程。<br><br>
+                        <span style="color: #fff; border-bottom: 1px solid var(--highlight);">標籤 (Labels)</span> 是大腦為了快速處理資訊的捷徑，<br>
+                        但它同時也是遮蔽真實的眼罩。<br><br>
+                        在網路匿名世界中，<br>
+                        你願意花多少時間，去閱讀標籤背後的故事？
+                    </p>
+                    <button class="next-btn" onclick="location.reload()">重新體驗</button>
+                </div>
+            `;
+        }
+
+        // 初始化
+        renderCase();
+
+    </script>
+</body>
+</html>
