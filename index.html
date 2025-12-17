@@ -2,16 +2,20 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>第一展區：盲測審判 (5 Cases)</title>
     <style>
         :root {
             --bg-color: #0d0d0d;
             --card-bg: #1a1a1a;
             --text-main: #e0e0e0;
-            --highlight: #00ff41; /* 駭客綠：用於正面/中性真相 */
-            --alert: #ff3333; /* 警告紅：用於負面真相 */
+            --highlight: #00ff41; /* 駭客綠 */
+            --alert: #ff3333; /* 警告紅 */
             --mute: #666;
+        }
+
+        * {
+            box-sizing: border-box; /* 確保 padding 不會撐破寬度 */
         }
 
         body {
@@ -19,19 +23,23 @@
             color: var(--text-main);
             font-family: 'Courier New', Courier, monospace;
             margin: 0;
-            height: 100vh;
+            /* 使用 dvh (Dynamic Viewport Height) 解決手機瀏覽器工具列遮擋問題 */
+            min-height: 100dvh; 
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            overflow: hidden;
+            /* 允許垂直捲動，防止小螢幕內容被切掉 */
+            overflow-y: auto; 
+            overflow-x: hidden;
+            padding: 20px 0;
         }
 
         /* 掃描線特效背景 */
         body::before {
             content: " ";
             display: block;
-            position: absolute;
+            position: fixed; /* 改為 fixed 確保背景跟隨 */
             top: 0;
             left: 0;
             bottom: 0;
@@ -46,6 +54,15 @@
             width: 90%;
             max-width: 600px;
             z-index: 10;
+            position: relative;
+        }
+
+        h2 {
+            text-align: center;
+            letter-spacing: 5px;
+            margin-bottom: 30px;
+            /* 使用 clamp 讓字體隨視窗大小縮放，最小 1.2rem，最大 1.8rem */
+            font-size: clamp(1.2rem, 4vw, 1.8rem);
         }
 
         /* 進度條 */
@@ -59,7 +76,7 @@
         .progress-fill {
             height: 100%;
             background: var(--highlight);
-            width: 20%; /* 初始寬度 1/5 */
+            width: 20%;
             transition: width 0.5s ease;
             box-shadow: 0 0 10px var(--highlight);
         }
@@ -87,6 +104,8 @@
             justify-content: space-between;
             color: var(--mute);
             font-size: 0.8rem;
+            flex-wrap: wrap; /* 防止標題在極小螢幕重疊 */
+            gap: 5px;
         }
 
         .behavior-text {
@@ -94,7 +113,7 @@
             line-height: 1.6;
             margin-bottom: 30px;
             font-weight: bold;
-            min-height: 100px; /* 保持高度一致 */
+            min-height: 100px;
         }
 
         /* 標籤揭露區 */
@@ -105,7 +124,7 @@
             margin-bottom: 30px;
             text-align: center;
             position: relative;
-            height: 60px;
+            min-height: 60px; /* 改為 min-height 容納多行文字 */
             display: flex;
             align-items: center;
             justify-content: center;
@@ -121,6 +140,7 @@
             justify-content: center;
             cursor: not-allowed;
             letter-spacing: 2px;
+            font-size: clamp(0.9rem, 3vw, 1rem);
         }
 
         .revealed-text {
@@ -130,6 +150,7 @@
             text-shadow: 0 0 5px var(--highlight);
             animation: glitch 0.5s infinite;
             display: none;
+            word-break: break-word; /* 防止長文字破版 */
         }
 
         .revealed-text.bad {
@@ -153,9 +174,11 @@
             cursor: pointer;
             transition: 0.2s;
             font-size: 1rem;
+            /* 讓按鈕在手機上好按一點 */
+            touch-action: manipulation; 
         }
 
-        button:hover {
+        button:hover, button:active {
             border-color: #fff;
             background: rgba(255,255,255,0.1);
         }
@@ -184,6 +207,8 @@
         .feedback-text {
             margin-bottom: 20px;
             color: #bbb;
+            font-size: 1rem;
+            line-height: 1.5;
         }
 
         .next-btn {
@@ -192,10 +217,59 @@
             color: #000;
             font-weight: bold;
             border: none;
+            padding: 15px;
         }
         .next-btn:hover {
             background: var(--highlight);
             box-shadow: 0 0 15px var(--highlight);
+        }
+
+        /* =========================================
+           針對手機與平板的特別優化 (RWD)
+           ========================================= */
+        @media screen and (max-width: 768px) {
+            .container {
+                width: 95%; /* 手機版寬度更寬一點 */
+            }
+
+            .case-card {
+                padding: 20px; /* 減少內邊距 */
+                min-height: auto; /* 取消固定高度，讓內容自然撐開 */
+            }
+
+            .behavior-text {
+                font-size: 1.1rem; /* 字體稍微縮小 */
+                min-height: 80px;
+                margin-bottom: 20px;
+            }
+
+            .identity-box {
+                margin-bottom: 20px;
+            }
+
+            .btn-group {
+                gap: 10px;
+            }
+
+            button {
+                padding: 12px 5px; /* 按鈕稍微緊湊一點 */
+                font-size: 0.95rem;
+            }
+            
+            h2 {
+                letter-spacing: 2px; /* 手機版標題字距縮小 */
+                margin-bottom: 20px;
+            }
+        }
+
+        /* 針對極小螢幕 (例如 iPhone SE) */
+        @media screen and (max-width: 380px) {
+            .behavior-text {
+                font-size: 1rem;
+            }
+            .revealed-text {
+                font-size: 1.1rem;
+            }
         }
 
         /* 動畫 */
@@ -218,7 +292,7 @@
 <body>
 
     <div class="container">
-        <h2 style="text-align: center; letter-spacing: 5px; margin-bottom: 30px;">BLIND_JUDGMENT // 盲測審判</h2>
+        <h2>BLIND_JUDGMENT // 盲測審判</h2>
         
         <div class="progress-bar">
             <div class="progress-fill" id="progress"></div>
@@ -240,10 +314,10 @@
             },
             {
                 id: "CASE_002",
-		behavior: "「年輕力壯的男生坐在博愛座上閉目養神，旁邊站著一位拄著拐杖的老人，他卻完全不讓座，看起來很沒家教。」",
-		label: "身體不適者",
-		context: "他剛做完化療，身體極度虛弱且想吐，雖然外表看不出來，但他此刻比站著的老人更需要這個位子。",
-		isBadLabel: false
+                behavior: "「年輕力壯的男生坐在博愛座上閉目養神，旁邊站著一位拄著拐杖的老人，他卻完全不讓座。」",
+                label: "身體不適者",
+                context: "他剛做完化療，身體極度虛弱且想吐，雖然外表看不出來，但他此刻比站著的老人更需要這個位子。",
+                isBadLabel: false
             },
             {
                 id: "CASE_003",
@@ -264,7 +338,7 @@
                 behavior: "「這名西裝筆挺的男子在台上侃侃而談，向台下的長輩們介紹高回報的投資項目。」",
                 label: "詐欺通緝犯",
                 context: "外表的光鮮亮麗是他的武器。他利用社會對『菁英形象』的信任，騙取養老金。",
-                isBadLabel: true // 這是負面標籤
+                isBadLabel: true 
             }
         ];
 
@@ -280,8 +354,8 @@
             content.innerHTML = `
                 <div>
                     <div class="case-header">
-                        <span>RECORD ID: ${data.id}</span>
-                        <span>STATUS: PENDING JUDGMENT</span>
+                        <span>ID: ${data.id}</span>
+                        <span>STATUS: PENDING</span>
                     </div>
                     
                     <div class="behavior-text">
@@ -313,22 +387,19 @@
         }
 
         function makeJudgment(userChoice, isBadTruth) {
-            // 隱藏遮罩，顯示真實身份
             document.getElementById('overlay').style.display = 'none';
             document.getElementById('reveal-text').style.display = 'block';
-            
-            // 鎖定按鈕
             document.getElementById('actions').style.display = 'none';
             
-            // 顯示回饋區
             const feedback = document.getElementById('feedback');
             feedback.style.display = 'block';
 
-            // 根據使用者的選擇 + 真相的好壞 給予不同回饋
+            // 自動滾動到卡片底部，確保手機用戶看到結果
+            feedback.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
             const userText = document.getElementById('user-choice-text');
             
             if (isBadTruth) {
-                // 這是那個詐欺犯的案例
                 if (userChoice === 'positive') {
                      userText.innerText = "系統紀錄：您選擇了相信。但有時候，光鮮亮麗的外表是最高明的偽裝。";
                      userText.style.color = "var(--alert)";
@@ -337,7 +408,6 @@
                      userText.style.color = "var(--highlight)";
                 }
             } else {
-                // 這是其他被誤解的好人案例
                 if (userChoice === 'negative') {
                     userText.innerText = "系統紀錄：您在第一時間選擇了「反感」。當標籤被撕開，我們是否對他人太過嚴苛？";
                     userText.style.color = "var(--alert)";
@@ -351,12 +421,13 @@
         function nextCase() {
             currentCase++;
             if (currentCase < cases.length) {
-                // 淡出效果
                 const card = document.getElementById('card-content');
                 card.style.opacity = '0';
                 setTimeout(() => {
                     renderCase();
                     card.style.opacity = '1';
+                    // 切換案例時，滾動回頂部
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
                 }, 300);
             } else {
                 showConclusion();
@@ -366,9 +437,9 @@
         function showConclusion() {
             const content = document.getElementById('card-content');
             content.innerHTML = `
-                <div style="text-align: center; padding: 20px; display: flex; flex-direction: column; height: 100%; justify-content: center;">
-                    <h2 style="color: var(--highlight); text-transform: uppercase;">Simulation Complete</h2>
-                    <p style="line-height: 1.8; margin-bottom: 30px; font-size: 1.1rem;">
+                <div style="text-align: center; padding: 10px; display: flex; flex-direction: column; min-height: 300px; justify-content: center;">
+                    <h2 style="color: var(--highlight); text-transform: uppercase; font-size: 1.5rem;">Simulation Complete</h2>
+                    <p style="line-height: 1.8; margin-bottom: 30px; font-size: 1rem;">
                         在剛剛的測試中，<br>
                         我們了解到了每一段不完整的故事，都不代表最終定論。<br><br>
                         <span style="color: #fff; border-bottom: 1px solid var(--highlight);">標籤 (Labels)</span> 只是大腦為了快速處理資訊的捷徑，<br>
@@ -379,9 +450,9 @@
                     <button class="next-btn" onclick="location.reload()">重新體驗</button>
                 </div>
             `;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        // 初始化
         renderCase();
 
     </script>
